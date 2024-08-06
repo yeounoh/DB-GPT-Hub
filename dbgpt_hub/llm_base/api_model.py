@@ -108,16 +108,6 @@ class GeminiModel:
             modified_sql = re.sub(pattern, replace_func, r"{}".format(s))
             return modified_sql
 
-        def verify_answer(s):
-            context_str = query[query.find("###Table creation statements###"
-                                           ):query.find("###Question###")]
-            # this should capture the hints.
-            input_str = query[query.find("###Question###"):query.find(
-                "Now generate SQLite SQL query to answer the given")]
-            new_prompt = VERIFICATION_TEMPLATE.format(context_str, input_str,
-                                                      s)
-            return self._generate_sql(new_prompt)
-
         def enforce_rules(s):
             context_str = query[query.find("###Table creation statements###"
                                            ):query.find("###Question###")]
@@ -210,7 +200,6 @@ class GeminiModel:
         _sql = enforce_rules(_sql)
         # if _sql != "":
         #     _sql = fix_literal_error(sql, db_name)  # verification
-        #_sql = verify_answer(sql)
         #_sql = syntax_fix(_sql)
         retry_cnt, max_retries = 0, 2
         valid, err, row_cnt = isValidSQL(_sql, db_path)
@@ -221,7 +210,6 @@ class GeminiModel:
             else:
                 _sql = fix_error(_sql, err)
                 # _sql = fix_literal_error(_sql, db_name)  # verification
-            #_sql = verify_answer(_sql) # this is too expensive to repeat
             #_sql = syntax_fix(_sql)
             _sql = enforce_rules(_sql)
             valid, err, row_cnt = isValidSQL(_sql, db_path)

@@ -682,39 +682,44 @@ DONT FORGET Additional rules to generate correct SQLite SQL dialect:
 - A single quote within the string can be encoded by putting two single quotes in a row (''): "Men's basketball" should be "Men''s basketball"
 - When comparing string/text type in filter criteria, use LIKE operator and surround the text with wildcards %.
 - When you need to find the highest or lowest values based on a certain condition, using ORDER BY and LIMIT 1 is prefered over using MAX/MIN within sub queries.
-- If the question doesn't specify exactly which columns to select between name column and id column, prefer to select id column.
+- If the question doesn't specify exactly which columns to select between name column and id column, prefer to select the id column.
 
 
 When you are OK with the fixed query, output the sqlite query string ONLY. It should be the query in plain text.
 """
 
-removed_rules = """
-- Respect the upper and lower case in the question, make sure they are the same in the query.
-"""
-
 VERIFICATION_TEMPLATE = """You are a SQLite SQL expert.
-Someone had a question and they tried to run a SQL query to fetch the data for it.
-Now you need to verify if the query is correctly addressing the question,
-given the table schemas, column definitions and example values, and hints.
+Your job is to identify the correct SQL query among a number of "SQL Candidates",
+that correctly answers the "Question".
+
+Writing a correct SQL query to the question requires correct understanding of "Table creation statements",
+and the provided "Hint". The correct SQL query requires respecting the following rules:
+- Try to use all the pieces of information provided in the hints.
+- Column values/literals: Make sure that column values and literals are correct. Consider the column example values and hints provided.
+- Table Aliases: Use aliases to avoid duplicate table name conflicts.
+- Functions: Use correct SQLite functions for the intended data types.
+- HAVING Clause: Employ boolean expressions (comparisons, AND, OR, NOT). Consider subqueries for top values.
+- Table Joins: Ensure table names are correct and use appropriate joins.
+- Arithmetic: Use basic operators (+, -, *, /) if dedicated functions are missing.
+- Put double quotations around column names and table names, especially when there is a space in between words.
+- Use double quotations for string literals.
+- A single quote within the string can be encoded by putting two single quotes in a row (''): "Men's basketball" should be "Men''s basketball"
+- When comparing string/text type in filter criteria, use LIKE operator and surround the text with wildcards %.
+- When you need to find the highest or lowest values based on a certain condition, using ORDER BY and LIMIT 1 is prefered over using MAX/MIN within sub queries.
+- If the question doesn't specify exactly which columns to select between name column and id column, prefer to select the id column.
 
 The database structure is defined by the following table schemas (comments after '--' provide additional column descriptions).
 **************************
 ###Table creation statements###
 {}
 **************************
-The original question is:
+###Question###
 {}
-
-The SQL query executed was:
-{}
-
 **************************
-Based on the question, table schemas, analyze what the query was trying to achieve and verify against the question.
-
-Your response should be one of the following:
-
-- Return "correct" if SQL is correctly answering the question.
-- Return "incorrect" if SQL is not correctly answering the question.
+###SQL Candidates###
+{}
+**************************
+Return only one correct SQL query. If there are several correct answers, pick one that is most concise. If there is no correct answer, pick the most likely to be correct.
 """
 
 #### SPIDER ####
