@@ -215,7 +215,7 @@ class GeminiModel:
             valid, err, row_cnt = isValidSQL(_sql, db_path)
             retry_cnt += 1
         if retry_cnt == max_retries:
-            logging.info(f"Correction failed due to {err}")
+            logging.info(f"Correction failed due to {err}: {_sql}")
         return _sql
 
     @torch.inference_mode()
