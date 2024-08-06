@@ -418,8 +418,11 @@ class ProcessSqlData:
                         data_info["column_selection_file"])
                     import pandas as pd
                     df = pd.read_csv(column_selection_file)
+                    id_name, schema_name = 'id', 'col_selection_schema'
+                    if 'question_id' in df:
+                        id_name, schema_name = 'question_id', 'correct_schema_str'
                     col_selected_schemas = dict()
-                    for k, v in zip(df['id'], df['col_selection_schema']):
+                    for k, v in zip(df[id_name], df[schema_name]):
                         col_selected_schemas[int(k)] = v
 
                 # train_data_file_list = [
