@@ -138,6 +138,7 @@ Also consider the "Rules" and some useful "Hints" if provided.
 - When comparing string/text type in filter criteria, use LIKE operator and surround the text with wildcards %.
 - When you need to find the highest or lowest values based on a certain condition, using ORDER BY with LIMIT 1 is prefered over using MAX/MIN within sub queries.
 - If the question doesn't specify exactly which columns to select, between name column and id column, prefer to select id column.
+- Never use || to concatenate columns in the SELECT. Rather output the columns as they are.
 ***************************
 ###Table creation statements###
 {schema}
@@ -635,6 +636,7 @@ DONT FORGET Additional rules to generate correct SQLite SQL dialect:
 - When comparing string/text type in filter criteria, use LIKE operator and surround the text with wildcards %.
 - When you need to find the highest or lowest values based on a certain condition, using ORDER BY and LIMIT 1 is prefered over using MAX/MIN within sub queries.
 - If the question doesn't specify exactly which columns to select between name column and id column, prefer to select id column.
+- Never use || to concatenate columns in the SELECT. Rather output the columns as they are.
 
 
 If there is no error you can find or fix, just output the original SQL query.
@@ -683,6 +685,7 @@ DONT FORGET Additional rules to generate correct SQLite SQL dialect:
 - When comparing string/text type in filter criteria, use LIKE operator and surround the text with wildcards %.
 - When you need to find the highest or lowest values based on a certain condition, using ORDER BY and LIMIT 1 is prefered over using MAX/MIN within sub queries.
 - If the question doesn't specify exactly which columns to select between name column and id column, prefer to select the id column.
+- Never use || to concatenate columns in the SELECT. Rather output the columns as they are.
 
 
 When you are OK with the fixed query, output the sqlite query string ONLY. It should be the query in plain text.

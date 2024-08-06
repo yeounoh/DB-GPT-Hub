@@ -52,6 +52,11 @@ def parallelized_inference(model: ChatModel, predict_data: List[Dict], **input_k
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
         futures = {executor.submit(inference_worker, model, item, input_kwargs): i for i, item in enumerate(predict_data)}
         try:
+            not_done = True
+            completed = dict()
+            while not_done:
+                for future in futures:
+                    if future.done():
             for future in tqdm(as_completed(futures, timeout=40000 // num_threads),
                                total=len(futures), desc="Inference Progress", unit="item"):
                 index = futures[future]
