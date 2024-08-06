@@ -113,13 +113,14 @@ class GeminiModel:
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
             err = ""
+            has_null = False
             try:
                 rows = cursor.execute(sql).fetchall()
-                has_null = False
-                for r in rows[0]:
-                    if 'None' in str(r):
-                        has_null = True
-                        break
+                if len(rows) > 0:
+                    for r in rows[0]:
+                        if 'None' in str(r):
+                            has_null = True
+                            break
             except sqlite3.Warning as warning:
                 logging.error(f"SQLite Warning: {warning}")
             except sqlite3.Error as e:

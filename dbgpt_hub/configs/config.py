@@ -124,7 +124,6 @@ Also consider the "Rules" and some useful "Hints" if provided.
 
 ***************************
 ###Rules###
-- Try to use all the pieces of information provided in the hints.
 - Column values/literals: Make sure that column values and literals are correct. Consider the column example values and hints provided.
 - Table Aliases: Use aliases to avoid duplicate table name conflicts.
 - Column References: Verify column names and use table_name.column_name format.
@@ -139,6 +138,7 @@ Also consider the "Rules" and some useful "Hints" if provided.
 - When you need to find the highest or lowest values based on a certain condition, using ORDER BY with LIMIT 1 is prefered over using MAX/MIN within sub queries.
 - If the question doesn't specify exactly which columns to select, between name column and id column, prefer to select id column.
 - Never use || to concatenate columns in the SELECT. Rather output the columns as they are.
+- If the hints provide a mathematical computation, make sure you closely follow the mathematical compuation.
 ***************************
 ###Table creation statements###
 {schema}
