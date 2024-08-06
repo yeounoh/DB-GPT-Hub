@@ -108,12 +108,31 @@ class GeminiModel:
             modified_sql = re.sub(pattern, replace_func, r"{}".format(s))
             return modified_sql
 
-        def enforce_rules(s):
+        def enforce_rules(s, db_path):
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            err = ""
+            try:
+                rows = cursor.execute(sql).fetchall()
+                has_null = False
+                for r in rows[0]:
+                    if 'None' in str(r):
+                        has_null = True
+                        break
+            except sqlite3.Warning as warning:
+                logging.error(f"SQLite Warning: {warning}")
+            except sqlite3.Error as e:
+                logging.error(e)
+            finally:
+                if conn:
+                    conn.close()
+
             context_str = query[query.find("###Table creation statements###"
                                            ):query.find("###Question###")]
             input_str = query[query.find("###Question###"):query.find(
                 "Now generate SQLite SQL query to answer the given")]
-            _sql = self._generate_sql(NOT_NULL_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
+            if has_null:
+              _sql = self._generate_sql(NOT_NULL_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
             _sql = self._generate_sql(DISTINCT_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
             # TODO(yeounoh) - worse accuracy, probably need to do so with fine-tuning.
             #_sql = self._generate_sql(SELECT_FIX_TEMPLATE.format(sql=_sql, question=input_str, schema=context_str))

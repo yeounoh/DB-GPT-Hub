@@ -186,6 +186,10 @@ Just return the SQL query string.
 NOT_NULL_ERROR_TEMPLATE = """You are a SQLite SQL exeprt.
 
 You have written a SQL query, "SQL", to answer a user question, "Question".
+The SQL query contains None and it is likely because you did not filter NULL values.
+
+Specifically, you should follow this rule to fix the SQL query:
+- If you are doing a logical operation on a column, such as mathematical operations and sorting, make sure to filter NULL values within those columns
 
 ***************************
 ###SQL###
@@ -195,15 +199,7 @@ You have written a SQL query, "SQL", to answer a user question, "Question".
 {question}
 ***************************
 
-Your job is to verify and fix the SQL query if needed.
-
-Your verification should be based on the following rules:
-- If you are doing a logical operation on a column, such as mathematical operations and sorting, make sure to filter NULL values within those columns
-
-See if you should modify the SQL to satify the verification rules above. Return the updated SQL query. Make sure that the SQL query is in SQLite dialect.
-If the SQL already satisfies the rules or the rules are not applicable, then just return the original SQL.
-
-Just return the SQL query string.
+Fix the SQL query and just return the SQL query string.
 """
 
 SELECT_FIX_TEMPLATE = """You are a SQLite SQL exeprt.
@@ -710,6 +706,7 @@ and the provided "Hint". The correct SQL query requires respecting the following
 - When comparing string/text type in filter criteria, use LIKE operator and surround the text with wildcards %.
 - When you need to find the highest or lowest values based on a certain condition, using ORDER BY and LIMIT 1 is prefered over using MAX/MIN within sub queries.
 - If the question doesn't specify exactly which columns to select between name column and id column, prefer to select the id column.
+- Never use || to concatenate columns in the SELECT. Rather output the columns as they are.
 
 The database structure is defined by the following table schemas (comments after '--' provide additional column descriptions).
 **************************
