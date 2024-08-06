@@ -37,6 +37,7 @@ class GeminiModel:
         # self.model = GenerativeModel(
         #     model_name=sft_job.tuned_model_endpoint_name)
         self.model = GenerativeModel(model_name="gemini-1.5-pro-preview-0514")
+        self.model = GenerativeModel(model_name="gemini-1.5-pro-preview-0514")
         self.model2 = GenerativeModel(
             model_name="gemini-1.5-flash-preview-0514")
 
@@ -216,7 +217,7 @@ class GeminiModel:
         logging.info("Connecting to " + db_path)
 
         _sql = sql
-        _sql = enforce_rules(_sql)
+        _sql = enforce_rules(_sql, db_path)
         # if _sql != "":
         #     _sql = fix_literal_error(sql, db_name)  # verification
         #_sql = syntax_fix(_sql)
@@ -230,7 +231,7 @@ class GeminiModel:
                 _sql = fix_error(_sql, err)
                 # _sql = fix_literal_error(_sql, db_name)  # verification
             #_sql = syntax_fix(_sql)
-            _sql = enforce_rules(_sql)
+            _sql = enforce_rules(_sql, db_path)
             valid, err, row_cnt = isValidSQL(_sql, db_path)
             retry_cnt += 1
         if retry_cnt == max_retries:

@@ -42,7 +42,7 @@ def inference_worker(model, item, input_kwargs):  # Worker function for a single
         return model.majority_voting(query, cands)
 
 def parallelized_inference(model: ChatModel, predict_data: List[Dict], **input_kwargs):
-    num_threads = 10
+    num_threads = 20
     res_dict = {}
     success_count, failure_count = 0, 0
 
@@ -52,12 +52,8 @@ def parallelized_inference(model: ChatModel, predict_data: List[Dict], **input_k
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
         futures = {executor.submit(inference_worker, model, item, input_kwargs): i for i, item in enumerate(predict_data)}
         try:
-            not_done = True
             completed = dict()
-            while not_done:
-                for future in futures:
-                    if future.done():
-            for future in tqdm(as_completed(futures, timeout=40000 // num_threads),
+            for future in tqdm(as_completed(futures, timeout=8000 // num_threads),
                                total=len(futures), desc="Inference Progress", unit="item"):
                 index = futures[future]
                 result = future.result()
