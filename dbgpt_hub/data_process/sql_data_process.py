@@ -285,6 +285,10 @@ class ProcessSqlData:
                 if self.use_column_filtering:
                     if int(data['question_id']) in column_filtered_schemas:
                         schema_filtered = column_filtered_schemas[int(data['question_id'])]
+                else:
+                    schema_filtered = schema
+                # Use filtered schemas for regular generation
+                schema = schema_filtered
 
                 examples = ""
                 if self.num_examples > 0:
