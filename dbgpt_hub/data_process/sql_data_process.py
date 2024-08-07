@@ -268,10 +268,13 @@ class ProcessSqlData:
             D, I = example_store_index.search(np.array([q_emb]), k)
             return I[0, :min(k, len(I[0]))].tolist()
 
-        def generate_k_examples(schema, k):
-            #prompt = EXAMPLE_GENERATOR.format(schema, k)
-            prompt = EXAMPLE_GENERATOR2.format(schema=schema, k=k)
-            return self.model._generate_sql(prompt)
+        def generate_k_examples(schema, k, diverse_set=True):
+            if diverse_set:
+                prompt = EXAMPLE_GENERATOR2.format(schema=schema, k=k)
+                return self.model._generate_sql(prompt)
+            else:
+                prompt = EXAMPLE_GENERATOR.format(schema, k)
+                return self.model._generate_sql(prompt)
 
         db_examples = dict()
 
@@ -286,10 +289,10 @@ class ProcessSqlData:
                 if self.use_column_filtering:
                     if int(data['question_id']) in column_filtered_schemas:
                         schema_filtered = column_filtered_schemas[int(data['question_id'])]
-                else:
-                    schema_filtered = schema
+                # else:
+                #     schema_filtered = schema
                 # Use filtered schemas for regular generation
-                schema = schema_filtered
+                #schema = schema_filtered
 
                 examples = ""
                 if self.num_examples > 0:
@@ -297,8 +300,12 @@ class ProcessSqlData:
                         if 'difficulty' in data: #and data['difficulty'] == 'simple':
                             if data[db_id_name] not in db_examples:
                                 db_examples[data[db_id_name]] = generate_k_examples(
-                                    schema_filtered, self.num_examples)
+                                    schema, self.num_examples)
                             examples = db_examples[data[db_id_name]]
+                        if self.use_column_filtering:
+                            examples += "\n" + generate_k_examples(schema_filtered,
+                                                                   self.num_examples // 2,
+                                                                   diverse_set=False)
                     else:
                         k_indices = extract_k_examples(data["question"],  self.num_examples)
                         for ii, k_idx in enumerate(k_indices):
