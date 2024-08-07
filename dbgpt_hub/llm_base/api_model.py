@@ -222,7 +222,7 @@ class GeminiModel:
         # if _sql != "":
         #     _sql = fix_literal_error(sql, db_name)  # verification
         #_sql = syntax_fix(_sql)
-        retry_cnt, max_retries = 0, 20
+        retry_cnt, max_retries = 0, 5
         valid, err, row_cnt = isValidSQL(_sql, db_path)
 
         tried_sql = [_sql]
