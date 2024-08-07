@@ -497,6 +497,34 @@ Now here is the real question.
 ###Answer###
 """
 
+EXAMPLE_GENERATOR2 = """You are a SQLite SQL expert.
+Your job is to create {k} examples, where each example consists of a question and a SQL query to fetch the data for it.
+I want each example to look like this, question input and SQL ouput pairs:
+```
+"input": "What's the description of the series code SM.POP.TOTL for Aruba?\n\n(Hints: Aruba is the name of the country where ShortName = 'Aruba')"
+
+"output": "SELECT T2.Description FROM Country AS T1 INNER JOIN CountryNotes AS T2 ON T1.CountryCode = T2.Countrycode WHERE T1.ShortName = 'Aruba' AND T2.Seriescode = 'SM.POP.TOTL'"
+```
+
+You should generate examples that examine and showcase different aspects and relationships of the following table schemas, described in "Table creation statements".
+Understand the database tables and their relationships. Understand the columns and their types and meanings to construct intresting examples.
+
+Generate a mixture of SQL examples that include:
+- some simple SQL query examples without JOIN
+- some SQL query examples with aggregates, like COUNT
+- some simple SQL query examples with JOIN
+- some complex SQL query examples with nested JOIN
+
+**************************
+###Table creation statements###
+{schema}
+**************************
+
+Generate total of {k} examples.
+Only outputs the examples (question input and SQL output pairs), and each eaxmple can be separated by a new line.
+"""
+
+
 EXAMPLE_GENERATOR = """You are a SQLite SQL expert.
 Your job is to create a set of examples, where each example consists of a question and a SQL query to fetch the data for it.
 

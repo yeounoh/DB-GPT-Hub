@@ -22,7 +22,7 @@ sys.path.append(ROOT_PATH)
 from tqdm import tqdm
 
 from dbgpt_hub.configs.config import (BASIC_INSTRUCTION_PROMPT, COT_INSTRUCTION_PROMPT, EXAMPLE_GENERATOR, SQL_DATA_INFO,
-                                      DATA_PATH, INPUT_PROMPT,
+                                      DATA_PATH, INPUT_PROMPT, EXAMPLE_GENERATOR2,
                                       INSTRUCTION_PROMPT,
                                       INSTRUCTION_ONE_SHOT_PROMPT,
                                       INSTRUCTION_THREE_SHOT_PROMPT)
@@ -269,7 +269,8 @@ class ProcessSqlData:
             return I[0, :min(k, len(I[0]))].tolist()
 
         def generate_k_examples(schema, k):
-            prompt = EXAMPLE_GENERATOR.format(schema, k)
+            #prompt = EXAMPLE_GENERATOR.format(schema, k)
+            prompt = EXAMPLE_GENERATOR2.format(schema=schema, k=k)
             return self.model._generate_sql(prompt)
 
         db_examples = dict()
@@ -295,7 +296,8 @@ class ProcessSqlData:
                     if self.synthetic_examples:
                         if 'difficulty' in data: #and data['difficulty'] == 'simple':
                             if data[db_id_name] not in db_examples:
-                                db_examples[data[db_id_name]] = generate_k_examples(schema_filtered, self.num_examples)
+                                db_examples[data[db_id_name]] = generate_k_examples(
+                                    schema_filtered, self.num_examples)
                             examples = db_examples[data[db_id_name]]
                     else:
                         k_indices = extract_k_examples(data["question"],  self.num_examples)
