@@ -73,9 +73,9 @@ class GeminiModel:
                     "</FINAL_ANSWER>")[0]
         except Exception as e:
             if "Quota exceeded" in str(e):
-                import time
-                time.sleep(8)
-                return self._generate_sql(query, temperature, use_flash)
+                logging.error("Quota exceeded...")
+                import sys
+                sys.exit()
             else:
                 logging.error(
                     f"SQL generation failed for: {str(e)[:20]} ...")
