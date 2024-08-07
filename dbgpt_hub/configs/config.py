@@ -183,6 +183,31 @@ If the SQL already satisfies the rules or the rules are not applicable, then jus
 Just return the SQL query string.
 """
 
+COLUMN_SELECTION_TEMPLATE = """You are a SQLite SQL expert.
+
+Your task is to meticulously examine the provided "SQL" query and determine if you can make the SQL query more precise by
+selecting the right columns to answer the given "Question".
+The SELECT clause should include only the columns that are required by the "Question" and the hint.
+
+If the question doesn't specify exactly which columns to select, between name column and id column, prefer to select id column. Infer the correct name for the id column based on the "Table creation statements".
+
+***************************
+###SQL query###
+{sql}
+***************************
+###Question###
+{question}
+***************************
+###Table creation statements###
+{schema}
+***************************
+
+Return the updated SQL query. Make sure that the SQL query is in SQLite dialect.
+If the SQL cannot be further improved, then just return the original SQL query.
+
+Just return the SQL query string.
+"""
+
 NOT_NULL_ERROR_TEMPLATE = """You are a SQLite SQL exeprt.
 
 You have written a SQL query, "SQL", to answer a user question, "Question".

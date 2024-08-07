@@ -3,7 +3,7 @@ import sqlite3
 from dbgpt_hub.configs.config import (CHECKER_TEMPLATE, LITERAL_ERROR_TEMPLATE,
                                       MAJORITY_VOTING, NOT_NULL_ERROR_TEMPLATE,
                                       DISTINCT_ERROR_TEMPLATE,
-                                      SELECT_FIX_TEMPLATE,
+                                      SELECT_FIX_TEMPLATE, COLUMN_SELECTION_TEMPLATE,
                                       SYNTAX_FIXER_TEMPLATE,
                                       VERIFICATION_TEMPLATE)
 import torch
@@ -135,9 +135,9 @@ class GeminiModel:
                 "Now generate SQLite SQL query to answer the given")]
             if has_null:
               _sql = self._generate_sql(NOT_NULL_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
-            _sql = self._generate_sql(DISTINCT_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
+            _sql = self._generate_sql(DISTINCT_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=False)
             # TODO(yeounoh) - worse accuracy, probably need to do so with fine-tuning.
-            #_sql = self._generate_sql(SELECT_FIX_TEMPLATE.format(sql=_sql, question=input_str, schema=context_str))
+            _sql = self._generate_sql(COLUMN_SELECTION_TEMPLATE.format(sql=_sql, question=input_str, schema=context_str))
             return _sql
 
         def fix_error(s, err):
