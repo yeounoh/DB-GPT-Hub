@@ -153,7 +153,7 @@ class GeminiModel:
             #     logging.info(f"\n*** verify and update, from {s} to {new_sql}")
             return new_sql
 
-        def fix_literal_error(s, db_id):
+        def fix_literal_error(s, db_id, tried_sql):
             if s == "":
                 return fix_error(s, "INFO:root:")
             file_path = 'dbgpt_hub/data/dev_db_tbl_col_vals.pickle'
@@ -183,8 +183,8 @@ class GeminiModel:
             input_str = query[query.find("###Question###"):query.find(
                 "Now generate SQLite SQL query to answer the given")]
             new_prompt = LITERAL_ERROR_TEMPLATE.format(context_str, col_vals,
-                                                       input_str, s)
-            new_sql = self._generate_sql(new_prompt, use_flash=False)
+                                                       input_str, "\n".join(tried_sql))
+            new_sql = self._generate_sql(new_prompt, use_flash=False, temperature=0.9)
             #logging.info(f"\n*** Fixing literal error, from {s} to {new_sql}")
             return new_sql
 
@@ -222,17 +222,19 @@ class GeminiModel:
         # if _sql != "":
         #     _sql = fix_literal_error(sql, db_name)  # verification
         #_sql = syntax_fix(_sql)
-        retry_cnt, max_retries = 0, 2
+        retry_cnt, max_retries = 0, 20
         valid, err, row_cnt = isValidSQL(_sql, db_path)
 
+        tried_sql = [_sql]
         while not valid and retry_cnt < max_retries:
             if err == "empty results":
-                _sql = fix_literal_error(_sql, db_name)
+                _sql = fix_literal_error(_sql, db_name, tried_sql)
             else:
                 _sql = fix_error(_sql, err)
                 # _sql = fix_literal_error(_sql, db_name)  # verification
             #_sql = syntax_fix(_sql)
             _sql = enforce_rules(_sql, db_path)
+            tried_sql.append(_sql)
             valid, err, row_cnt = isValidSQL(_sql, db_path)
             retry_cnt += 1
         if retry_cnt == max_retries:

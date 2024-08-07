@@ -610,8 +610,7 @@ Only outputs the examples (question input and SQL output pairs), and each eaxmpl
 
 LITERAL_ERROR_TEMPLATE = """You are a SQLite SQL expert.
 Someone had a question and they tried to run a SQL query to fetch the data for it.
-It is possible there were some literal errors in the query.
-Or you used a wrong table(s) and column(s) in the query.
+It is possible there were some literal errors or you used a wrong table(s) and column(s) in the query.
 
 The provided "Hints" should also give you the right column names and the literal values.
 
