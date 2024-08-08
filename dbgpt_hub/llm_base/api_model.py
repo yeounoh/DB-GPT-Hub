@@ -82,7 +82,7 @@ class GeminiModel:
                 logging.error(
                     f"SQL generation failed for: {str(e)[:20]} ...")
             return ""
-        resp = re.sub(r"ite\s*\n?\s*SELECT", "SELECT", resp)
+        resp = re.sub(r"^ite\s+", "", resp)
         resp = re.sub('\s+', ' ', resp).strip()
         return resp
 
