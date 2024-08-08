@@ -361,14 +361,14 @@ class ProcessSqlData:
                     "history": [],
                 }
                 return input
-        num_threads = 10
+        num_threads = 20
         res_dict = {}
         pbar = tqdm(total=len(datas), desc="Inference Progress", unit="item")
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             futures = {executor.submit(_data_worker, item): i for i, item in enumerate(datas)}
             try:
                 completed = dict()
-                for future in tqdm(as_completed(futures, timeout=3000 // num_threads),
+                for future in tqdm(as_completed(futures, timeout=2500),
                                   total=len(futures), desc="Inference Progress", unit="item"):
                     index = futures[future]
                     result = future.result()
