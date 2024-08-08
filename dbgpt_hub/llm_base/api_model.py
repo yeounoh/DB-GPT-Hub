@@ -11,6 +11,7 @@ import json
 import random
 import numpy as np
 import os, re
+import time
 from typing import Any, Dict, Generator, List, Optional, Tuple
 from threading import Thread
 from sqlglot import parse_one, exp
@@ -53,7 +54,7 @@ class GeminiModel:
     def _generate_sql(self,
                       query,
                       temperature=0.5,
-                      use_flash=False, max_retires=3):
+                      use_flash=False, max_retries=5):
         model = self.model2 if use_flash else self.model
         try:
             resp = model.generate_content(query,
@@ -73,11 +74,12 @@ class GeminiModel:
                 resp = resp.split("<FINAL_ANSWER>")[1].split(
                     "</FINAL_ANSWER>")[0]
         except Exception as e:
-            if "Quota exceeded" in str(e):
-                logging.info("Quota exceeded, retrying in 10 seconds")
-                import time
+            if ("Quota exceeded" in str(e) or
+                "SQL generation failed for: Cannot get the respo" in str(e)):
+                logging.info(f"{str(e)}, retrying in 10 seconds")
                 time.sleep(10)
-                return self._generate_sql(query, temperature, use_flash)
+                if max_retries > 0:
+                  return self._generate_sql(query, temperature, use_flash, max_retries=max_retries-1)
             else:
                 logging.error(
                     f"SQL generation failed for: {str(e)[:20]} ...")
@@ -103,97 +105,97 @@ class GeminiModel:
     def sql_has_math(self, sql_query):
         sql_query = sql_query.replace("`", '"')
         try:
-          tree = parse_one(sql_query)
+            tree = parse_one(sql_query)
         except Exception as e:
-          print(f"Error parsing SQL: {e}")
-          return False
+            print(f"Error parsing SQL: {e}")
+            return False
 
         def _has_math_expression(node):
-          """Recursively checks if a node represents a math operation."""
-          if isinstance(node, (exp.Binary, exp.Unary, exp.Func, exp.Div)):
-              target_keys = [
-                  "+",
-                  "-",
-                  "*",
-                  "%",
-                  "^",  # Binary operators (excluding "/")
-                  "SUM",
-                  "AVG",
-                  "MAX",
-                  "MIN",
-                  "COUNT",
-                  "ROUND",
-                  "ABS",
-                  "ACOS",
-                  "ASIN",
-                  "ATAN",
-                  "ATAN2",
-                  "CEIL",
-                  "COS",
-                  "COT",
-                  "DEGREES",
-                  "EXP",
-                  "FLOOR",
-                  "LN",
-                  "LOG",
-                  "LOG10",
-                  "MOD",
-                  "PI",
-                  "POWER",
-                  "RADIANS",
-                  "RAND",
-                  "SIGN",
-                  "SIN",
-                  "SQRT",
-                  "TAN",
-                  "TRUNCATE",
-                  "CAST",
-              ]
+            """Recursively checks if a node represents a math operation."""
+            if isinstance(node, (exp.Binary, exp.Unary, exp.Func, exp.Div)):
+                target_keys = [
+                    "+",
+                    "-",
+                    "*",
+                    "%",
+                    "^",  # Binary operators (excluding "/")
+                    "SUM",
+                    "AVG",
+                    "MAX",
+                    "MIN",
+                    "COUNT",
+                    "ROUND",
+                    "ABS",
+                    "ACOS",
+                    "ASIN",
+                    "ATAN",
+                    "ATAN2",
+                    "CEIL",
+                    "COS",
+                    "COT",
+                    "DEGREES",
+                    "EXP",
+                    "FLOOR",
+                    "LN",
+                    "LOG",
+                    "LOG10",
+                    "MOD",
+                    "PI",
+                    "POWER",
+                    "RADIANS",
+                    "RAND",
+                    "SIGN",
+                    "SIN",
+                    "SQRT",
+                    "TAN",
+                    "TRUNCATE",
+                    "CAST",
+                ]
 
-              if (
-                  (
-                      isinstance(node, (exp.Binary, exp.Unary))
-                      and node.key in target_keys
-                  )
-                  or (isinstance(node, exp.Func) and node.key.upper() in target_keys)
-                  or isinstance(
-                      node,
-                      (
-                          exp.Div,
-                          exp.Mul,
-                          exp.Sum,
-                          exp.Avg,
-                          exp.Max,
-                          exp.Min,
-                          exp.Count,
-                          exp.Round,
-                          exp.Abs,
-                          exp.Ceil,
-                          exp.Exp,
-                          exp.Floor,
-                          exp.Ln,
-                          exp.Log,
-                          exp.Mod,
-                          exp.Rand,
-                          exp.Sign,
-                          exp.Sqrt,
-                          exp.Cast,
-                      ),
-                  )
-              ):
-                return True
+                if (
+                    (
+                        isinstance(node, (exp.Binary, exp.Unary))
+                        and node.key in target_keys
+                    )
+                    or (isinstance(node, exp.Func) and node.key.upper() in target_keys)
+                    or isinstance(
+                        node,
+                        (
+                            exp.Div,
+                            exp.Mul,
+                            exp.Sum,
+                            exp.Avg,
+                            exp.Max,
+                            exp.Min,
+                            exp.Count,
+                            exp.Round,
+                            exp.Abs,
+                            exp.Ceil,
+                            exp.Exp,
+                            exp.Floor,
+                            exp.Ln,
+                            exp.Log,
+                            exp.Mod,
+                            exp.Rand,
+                            exp.Sign,
+                            exp.Sqrt,
+                            exp.Cast,
+                        ),
+                    )
+                ):
+                    return True
 
-              expressions = getattr(node, "expressions", [])
-              args = getattr(node, "args", [])
-              if isinstance(args, dict):
-                args = list(args.values())
-              components = expressions + args
+                expressions = getattr(node, "expressions", [])
+                args = getattr(node, "args", [])
+                if isinstance(args, dict):
+                    args = list(args.values())
+                components = expressions + args
 
-              for component in components:
-                if _has_math_expression(component):
-                  return True
+                for component in components:
+                    if _has_math_expression(component):
+                        return True
 
-              return False
+                return False
 
         return _has_math_expression(tree)
 
@@ -233,7 +235,7 @@ class GeminiModel:
             input_str = query[query.find("###Question###"):query.find(
                 "Now generate SQLite SQL query to answer the given")]
             if has_null:
-              _sql = self._generate_sql(NOT_NULL_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
+                _sql = self._generate_sql(NOT_NULL_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
             _sql = self._generate_sql(DISTINCT_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
             # TODO(yeounoh) - worse accuracy, probably need to do so with fine-tuning.
             #_sql = self._generate_sql(COLUMN_SELECTION_TEMPLATE.format(sql=_sql, question=input_str, schema=context_str))
