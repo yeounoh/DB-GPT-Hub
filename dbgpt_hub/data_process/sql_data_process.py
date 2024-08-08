@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
 import json
@@ -278,8 +279,7 @@ class ProcessSqlData:
 
         db_examples = dict()
 
-        res = []
-        for data in tqdm(datas):
+        def _data_worker(data):
             if data[db_id_name] in db_context.keys():
                 # all tables and columns with primary and foreign keys.
                 schema = db_context[data[db_id_name]]
@@ -360,8 +360,112 @@ class ProcessSqlData:
                     "output": data[output_name],
                     "history": [],
                 }
-                res.append(input)
-        return res
+                return input
+        num_threads = 10
+        res_dict = {}
+        pbar = tqdm(total=len(datas), desc="Inference Progress", unit="item")
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            futures = {executor.submit(_data_worker, item): i for i, item in enumerate(datas)}
+            try:
+                completed = dict()
+                for future in tqdm(as_completed(futures, timeout=3000 // num_threads),
+                                  total=len(futures), desc="Inference Progress", unit="item"):
+                    index = futures[future]
+                    result = future.result()
+                    res_dict[index] = result
+                    pbar.update(1)
+            except TimeoutError as e:
+                print(e)
+                for i in range(len(datas)):
+                    if i not in res_dict:
+                        res_dict[i] = ""
+                executor.shutdown()
+        res = [res_dict[i] for i in range(len(datas))]
+
+        # res = []
+        # for data in tqdm(datas):
+        #     if data[db_id_name] in db_context.keys():
+        #         # all tables and columns with primary and foreign keys.
+        #         schema = db_context[data[db_id_name]]
+        #         if self.extra_top_k > 0 and data['difficulty'] != 'simple':
+        #             schema = extract_k_tables(db_context, data[db_id_name],
+        #                                       self.extra_top_k)
+        #         if self.use_column_filtering:
+        #             if int(data['question_id']) in column_filtered_schemas:
+        #                 schema_filtered = column_filtered_schemas[int(data['question_id'])]
+        #         # else:
+        #         #     schema_filtered = schema
+        #         # Use filtered schemas for regular generation
+        #         #schema = schema_filtered
+
+        #         examples = ""
+        #         if self.num_examples > 0:
+        #             if self.synthetic_examples:
+        #                 if 'difficulty' in data: #and data['difficulty'] == 'simple':
+        #                     if data[db_id_name] not in db_examples:
+        #                         db_examples[data[db_id_name]] = generate_k_examples(
+        #                             schema, self.num_examples)
+        #                     examples = db_examples[data[db_id_name]]
+        #                 if self.use_column_filtering:
+        #                     examples += "\n" + generate_k_examples(schema_filtered,
+        #                                                            self.num_examples // 2,
+        #                                                            diverse_set=False)
+        #             else:
+        #                 k_indices = extract_k_examples(data["question"],  self.num_examples)
+        #                 for ii, k_idx in enumerate(k_indices):
+        #                     offset = 1 if ii > int(self.num_examples * self.gt_pos) and self.gt_example else 0
+        #                     if ii == int(self.num_examples * self.gt_pos) and self.gt_example:
+        #                         examples += f"""
+        #                         \nExample {ii + 1})
+        #                         - question: {data["question"]}
+        #                         - answer (SQL query): {data["SQL"]}
+        #                         """
+        #                     else:
+        #                         examples += f"""
+        #                         \nExample {ii + 1 + offset})
+        #                         - question: {self.example_store[1][k_idx]}
+        #                         - answer (SQL query): {self.example_store[2][k_idx]}
+        #                         """
+
+        #         documentation = ""
+        #         if self.top_k_documents > 0:
+        #             k_indices = extract_k_examples(
+        #                 data["question"] if self.document_by == "question" else
+        #                 data["SQL"], self.top_k_documents)
+        #             docs = [v[1] for k, v in self.doc_store.items()]
+        #             for ii, k_idx in enumerate(k_indices):
+        #                 documentation += f"""
+        #                 \nSeciton {ii + 1}
+        #                 {docs[k_idx]}
+        #                 """
+
+        #         hints = data["evidence"] if "evidence" in data else ""
+        #         if self.cot_prompt:
+        #             input_instruction = COT_INSTRUCTION_PROMPT.format(
+        #                 db_name=data[db_id_name],
+        #                 hints=hints,
+        #                 schema=schema,
+        #                 question=data["question"])
+        #         else:
+        #             input_instruction = BASIC_INSTRUCTION_PROMPT.format(
+        #                 db_name=data[db_id_name],
+        #                 hints=hints,
+        #                 schema=schema,
+        #                 examples=examples,
+        #                 documentation=documentation,
+        #                 question=data["question"])
+
+        #         input_idx = input_instruction.find("###Question###")
+
+        #         input = {
+        #             "db_id": data[db_id_name],
+        #             "instruction": input_instruction[:input_idx],
+        #             "input": input_instruction[input_idx:],
+        #             "output": data[output_name],
+        #             "history": [],
+        #         }
+        #         res.append(input)
+        # return res
 
     def create_sft_raw_data(self):
         train_data = []

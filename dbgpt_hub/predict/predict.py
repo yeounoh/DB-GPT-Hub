@@ -64,12 +64,12 @@ def parallelized_inference(model: ChatModel, predict_data: List[Dict], **input_k
                     failure_count += 1
                 pbar.update(1)
         except TimeoutError as e:
-            print(e)
+            logging.error(e)
             for i in range(len(predict_data)):
                 if i not in res_dict:
                     res_dict[i] = ""
             executor.shutdown()
-    print(f"Successful inferences: {success_count}, Failed inferences: {failure_count}")
+    logging.info(f"Successful inferences: {success_count}, Failed inferences: {failure_count}")
     return [res_dict[i] for i in range(len(predict_data))]
 
 def inference(model: ChatModel, predict_data: List[Dict], **input_kwargs):
