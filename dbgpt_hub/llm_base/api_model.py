@@ -100,7 +100,7 @@ class GeminiModel:
         logging.info("Consensus: " + sql)
         return sql
 
-    def sql_has_math(sql_query):
+    def sql_has_math(self, sql_query):
         sql_query = sql_query.replace("`", '"')
         try:
           tree = parse_one(sql_query)
