@@ -277,6 +277,7 @@ class ProcessSqlData:
                 prompt = EXAMPLE_GENERATOR.format(schema, k)
                 return self.model._generate_sql(prompt)
 
+        pbar = tqdm(total=len(datas), desc="Inference Progress", unit="item")
         db_examples = dict()
         for data in datas:
             schema = db_context[data[db_id_name]]
@@ -286,6 +287,7 @@ class ProcessSqlData:
                             if data[db_id_name] not in db_examples:
                                 db_examples[data[db_id_name]] = generate_k_examples(
                                     schema, self.num_examples)
+            pbar.update(1)
 
         def _data_worker(data):
             if data[db_id_name] in db_context.keys():
