@@ -1,7 +1,7 @@
 import pickle
 import sqlite3
 from dbgpt_hub.configs.config import (CHECKER_TEMPLATE, LITERAL_ERROR_TEMPLATE,
-                                      MAJORITY_VOTING, NOT_NULL_ERROR_TEMPLATE,
+                                      MAJORITY_VOTING, MATH_FIXER_TEMPLATE, NOT_NULL_ERROR_TEMPLATE,
                                       DISTINCT_ERROR_TEMPLATE,
                                       SELECT_FIX_TEMPLATE, COLUMN_SELECTION_TEMPLATE,
                                       SYNTAX_FIXER_TEMPLATE,
@@ -13,6 +13,7 @@ import numpy as np
 import os, re
 from typing import Any, Dict, Generator, List, Optional, Tuple
 from threading import Thread
+from sqlglot import parse_one, exp
 
 from dbgpt_hub.llm_base.config_parser import get_infer_args
 from dbgpt_hub.data_process.data_utils import get_template
@@ -99,6 +100,103 @@ class GeminiModel:
         logging.info("Consensus: " + sql)
         return sql
 
+    def sql_has_math(sql_query):
+        sql_query = sql_query.replace("`", '"')
+        try:
+          tree = parse_one(sql_query)
+        except Exception as e:
+          print(f"Error parsing SQL: {e}")
+          return False
+
+        def _has_math_expression(node):
+          """Recursively checks if a node represents a math operation."""
+          if isinstance(node, (exp.Binary, exp.Unary, exp.Func, exp.Div)):
+              target_keys = [
+                  "+",
+                  "-",
+                  "*",
+                  "%",
+                  "^",  # Binary operators (excluding "/")
+                  "SUM",
+                  "AVG",
+                  "MAX",
+                  "MIN",
+                  "COUNT",
+                  "ROUND",
+                  "ABS",
+                  "ACOS",
+                  "ASIN",
+                  "ATAN",
+                  "ATAN2",
+                  "CEIL",
+                  "COS",
+                  "COT",
+                  "DEGREES",
+                  "EXP",
+                  "FLOOR",
+                  "LN",
+                  "LOG",
+                  "LOG10",
+                  "MOD",
+                  "PI",
+                  "POWER",
+                  "RADIANS",
+                  "RAND",
+                  "SIGN",
+                  "SIN",
+                  "SQRT",
+                  "TAN",
+                  "TRUNCATE",
+                  "CAST",
+              ]
+
+              if (
+                  (
+                      isinstance(node, (exp.Binary, exp.Unary))
+                      and node.key in target_keys
+                  )
+                  or (isinstance(node, exp.Func) and node.key.upper() in target_keys)
+                  or isinstance(
+                      node,
+                      (
+                          exp.Div,
+                          exp.Mul,
+                          exp.Sum,
+                          exp.Avg,
+                          exp.Max,
+                          exp.Min,
+                          exp.Count,
+                          exp.Round,
+                          exp.Abs,
+                          exp.Ceil,
+                          exp.Exp,
+                          exp.Floor,
+                          exp.Ln,
+                          exp.Log,
+                          exp.Mod,
+                          exp.Rand,
+                          exp.Sign,
+                          exp.Sqrt,
+                          exp.Cast,
+                      ),
+                  )
+              ):
+                return True
+
+              expressions = getattr(node, "expressions", [])
+              args = getattr(node, "args", [])
+              if isinstance(args, dict):
+                args = list(args.values())
+              components = expressions + args
+
+              for component in components:
+                if _has_math_expression(component):
+                  return True
+
+              return False
+
+        return _has_math_expression(tree)
+
     def verify_and_correct(self, query, sql, db_folder_path):
 
         def syntax_fix(s):
@@ -136,9 +234,11 @@ class GeminiModel:
                 "Now generate SQLite SQL query to answer the given")]
             if has_null:
               _sql = self._generate_sql(NOT_NULL_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
-            _sql = self._generate_sql(DISTINCT_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=False)
+            _sql = self._generate_sql(DISTINCT_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
             # TODO(yeounoh) - worse accuracy, probably need to do so with fine-tuning.
             #_sql = self._generate_sql(COLUMN_SELECTION_TEMPLATE.format(sql=_sql, question=input_str, schema=context_str))
+            if self.sql_has_math(_sql):
+                _sql = self._generate_sql(MATH_FIXER_TEMPLATE.format(sql=s, question=input_str, use_flash=False))
             return _sql
 
         def fix_error(s, err):

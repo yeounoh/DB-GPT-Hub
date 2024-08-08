@@ -208,6 +208,28 @@ If the SQL cannot be further improved, then just return the original SQL query.
 Just return the SQL query string.
 """
 
+MATH_FIXER_TEMPLATE = """You are a SQLite SQL exeprt.
+
+You have written a SQL query, "SQL", to answer a user question, "Question".
+The SQL query contains some mathmatical expression, which requires verification.
+The "Question" contains very useful "hints" as well.
+
+Specifically, you should follow these rules to verify the SQL query:
+- For any mathematical operation, please closely follow the hints. The output must adhere to the provided hints.
+- If the hints provide a mathematical computation, make sure you closely follow the mathematical computation.
+
+***************************
+###SQL###
+{sql}
+***************************
+###Question###
+{question}
+***************************
+
+Fix the SQL query and just return the SQL query string.
+If the SQL query already satisfies all the verification rules, just return it as-is.
+"""
+
 NOT_NULL_ERROR_TEMPLATE = """You are a SQLite SQL exeprt.
 
 You have written a SQL query, "SQL", to answer a user question, "Question".
