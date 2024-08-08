@@ -237,8 +237,8 @@ class GeminiModel:
             _sql = self._generate_sql(DISTINCT_ERROR_TEMPLATE.format(sql=s, question=input_str), use_flash=True)
             # TODO(yeounoh) - worse accuracy, probably need to do so with fine-tuning.
             #_sql = self._generate_sql(COLUMN_SELECTION_TEMPLATE.format(sql=_sql, question=input_str, schema=context_str))
-            if self.sql_has_math(_sql):
-                _sql = self._generate_sql(MATH_FIXER_TEMPLATE.format(sql=s, question=input_str, use_flash=False))
+            # if self.sql_has_math(_sql):
+            #     _sql = self._generate_sql(MATH_FIXER_TEMPLATE.format(sql=s, question=input_str, use_flash=False))
             return _sql
 
         def fix_error(s, err):
