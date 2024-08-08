@@ -278,6 +278,14 @@ class ProcessSqlData:
                 return self.model._generate_sql(prompt)
 
         db_examples = dict()
+        for data in datas:
+            schema = db_context[data[db_id_name]]
+            if self.num_examples > 0:
+                    if self.synthetic_examples:
+                        if 'difficulty' in data: #and data['difficulty'] == 'simple':
+                            if data[db_id_name] not in db_examples:
+                                db_examples[data[db_id_name]] = generate_k_examples(
+                                    schema, self.num_examples)
 
         def _data_worker(data):
             if data[db_id_name] in db_context.keys():
@@ -289,19 +297,11 @@ class ProcessSqlData:
                 if self.use_column_filtering:
                     if int(data['question_id']) in column_filtered_schemas:
                         schema_filtered = column_filtered_schemas[int(data['question_id'])]
-                # else:
-                #     schema_filtered = schema
-                # Use filtered schemas for regular generation
-                #schema = schema_filtered
 
                 examples = ""
                 if self.num_examples > 0:
                     if self.synthetic_examples:
-                        if 'difficulty' in data: #and data['difficulty'] == 'simple':
-                            if data[db_id_name] not in db_examples:
-                                db_examples[data[db_id_name]] = generate_k_examples(
-                                    schema, self.num_examples)
-                            examples = db_examples[data[db_id_name]]
+                        examples = db_examples[data[db_id_name]]
                         if self.use_column_filtering:
                             examples += "\n" + generate_k_examples(schema_filtered,
                                                                    self.num_examples // 2,
@@ -361,7 +361,7 @@ class ProcessSqlData:
                     "history": [],
                 }
                 return input
-        num_threads = 20
+        num_threads = 30
         res_dict = {}
         pbar = tqdm(total=len(datas), desc="Inference Progress", unit="item")
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
@@ -381,6 +381,7 @@ class ProcessSqlData:
                         res_dict[i] = ""
                 executor.shutdown()
         res = [res_dict[i] for i in range(len(datas))]
+        return res
 
         # res = []
         # for data in tqdm(datas):
