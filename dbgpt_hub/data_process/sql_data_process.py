@@ -430,6 +430,8 @@ class ProcessSqlData:
                     id_name, schema_name = 'id', 'col_selection_schema'
                     if 'question_id' in df:
                         id_name, schema_name = 'question_id', 'correct_schema_str'
+                        if 'selected_schema_with_connections' in df:
+                            schema_name = 'selected_schema_with_connections'
                     col_selected_schemas = dict()
                     for k, v in zip(df[id_name], df[schema_name]):
                         col_selected_schemas[int(k)] = v
